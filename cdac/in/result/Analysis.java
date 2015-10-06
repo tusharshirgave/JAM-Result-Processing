@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.text.*;
 
 /**
 *@author Chandra Shekhar
@@ -41,7 +43,7 @@ class QuestionReport{
 
 	void print(){
 
-		Map<String, Integer> answersMap = new HashMap<String, Integer>();
+		Map<String, Integer> answersMap = new TreeMap<String, Integer>();
 
 		for(int i = 0; i < answers.size(); i++ ){
 			Integer n = (Integer) answersMap.get( answers.get(i) );
@@ -55,16 +57,38 @@ class QuestionReport{
 		}
 		
 		if( wrong >  correct){
+
 			Iterator it = answersMap.entrySet().iterator();
 			String option = null;
+
 			Integer count = 0 ;
-			System.out.print(question.Id+",AT:"+attempt+",CR:"+correct+",WO:"+wrong+",AN:"+question.getAnswer()+", ");
-                	while ( it.hasNext() ) {
-                        	Map.Entry pairs = (Map.Entry)it.next();
-				String o = (String) pairs.getKey();
-				int c = ((Integer) pairs.getValue()).intValue();
-				System.out.print("("+o+"|"+c+"),");
+			String answer = String.format("%0$-17s", question.getAnswer() );
+			DecimalFormat formatter = new DecimalFormat("00.00");
+
+			String corrper = formatter.format((float)(( (float) correct / attempt ) * 100));
+			String wronper = formatter.format((float)(( (float) wrong/attempt ) * 100 ));
+			
+			System.out.format(" ___________________________________\n");
+			System.out.format("| Question No   | %-4s              |\n", question.Id );
+			System.out.format("| Total Attempt | %-4d              |\n", attempt );
+			System.out.printf("| Correct       | %-4d(%s%%)      |\n",correct, corrper );
+			System.out.printf("| Wrong         | %-4d(%s%%)      |\n",wrong, wronper );
+			System.out.format("| Answer        | %s |\n", answer );
+			System.out.format("|___________________________________|\n");
+			System.out.format("| OPTION        | COUNT             |\n");
+			System.out.format("|_______________|___________________|\n");
+	
+
+			while ( it.hasNext() ) {
+					Map.Entry pairs = (Map.Entry)it.next();
+					String o = (String) pairs.getKey();
+					o = String.format("%0$-13s",o );
+					int c = ((Integer) pairs.getValue()).intValue();
+					String output = formatter.format((float) ( ( (float) c / attempt ) * 100 ));
+					System.out.format("| %s |%-4d(%s%%)       |\n",o, c, output );
 			}		
+
+			System.out.format("|_______________|___________________|\n");
 			System.out.println();
 		}
 	}
@@ -72,7 +96,7 @@ class QuestionReport{
 
 public class Analysis{	
 	
-	HashMap<String,QuestionReport> qReports = new HashMap<String,QuestionReport>();
+	Map<String,QuestionReport> qReports = new TreeMap<String,QuestionReport>();
 
 	void PaperAnalyis(Session session){
 

@@ -327,3 +327,4 @@ public final class StdStats {
 		System.out.printf("      varp %10.3f\n", varp(a));
 	}
 }
+

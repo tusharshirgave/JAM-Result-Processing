@@ -1,4 +1,3 @@
-
 package cdac.in.result;
 
 import java.text.DecimalFormat;
@@ -2252,14 +2251,16 @@ public class ResultProcessing{
 				for(int i = 3, qn = 0; i < typeToken.length; i++, qn++ ){
 
 					Question question  =  null;					
+					String questionId = "Q"+(i-2);
+					if( (i-2) < 10)
+						questionId = "Q0"+(1-2);
 
 					if( typeToken[i].equals("MCQ")  ){
-
-						question = new MultipalChocie("Q"+(i-2), sectionToken[i].trim(), keyToken[i].trim(), marksToken[i].trim() );
+						question = new MultipalChocie(questionId, sectionToken[i].trim(), keyToken[i].trim(), marksToken[i].trim() );
 					}else if( typeToken[i].equals("NAT")  ){
-						question = new RangeQuestion("Q"+(i-2), sectionToken[i].trim(), keyToken[i].trim(), marksToken[i].trim() );
+						question = new RangeQuestion( questionId , sectionToken[i].trim(), keyToken[i].trim(), marksToken[i].trim() );
 					}else if ( typeToken[i].equals("MSQ") ){
-						question = new MultipalAnswer("Q"+(i-2), sectionToken[i].trim(), keyToken[i].trim(), marksToken[i].trim() );
+						question = new MultipalAnswer( questionId, sectionToken[i].trim(), keyToken[i].trim(), marksToken[i].trim() );
 					}
 
 					if( question == null ){
