@@ -2253,7 +2253,7 @@ public class ResultProcessing{
 					Question question  =  null;					
 					String questionId = "Q"+(i-2);
 					if( (i-2) < 10)
-						questionId = "Q0"+(1-2);
+						questionId = "Q0"+(i-2);
 
 					if( typeToken[i].equals("MCQ")  ){
 						question = new MultipalChocie(questionId, sectionToken[i].trim(), keyToken[i].trim(), marksToken[i].trim() );
