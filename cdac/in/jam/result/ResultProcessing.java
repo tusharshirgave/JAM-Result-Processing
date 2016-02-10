@@ -29,8 +29,8 @@ import cdac.in.jam.util.QRCodeGenerator;
  * 
  * This class capture the Qualifilying Marks for each category
  * @author Chandra Shekhar 
- * @version 0.1
- * @date 16/02/2015
+ * @version 0.2
+ * @date 10/02/2016
  *
  **/
 
@@ -175,7 +175,7 @@ class DigitalSignature{
 
 	public static String getDigitalSignature(String message){
 
-		String salt = "2015jAm";
+		String salt = "2016jAm";
 		message = message+""+salt;
 		md.reset();
 		md.update( message.getBytes() );
@@ -260,7 +260,7 @@ abstract class Question{
 	double perNA;
 	double perRAT;
 
-	abstract double eval(Response response);
+	abstract double eval(Response response, Candidate candidate);
 	abstract void printLog( boolean flag );
 	abstract void print();
 	abstract String getAnswer();
@@ -359,7 +359,7 @@ class MultipalChocie extends Question{
 	 * @param marks marks of the question if the answer is correct 
 	 **/
 
-	double eval( Response response ){
+	double eval( Response response, Candidate candidate ){
 		try{	
 			if( response == null ){
 				System.out.println("1. Error in response (MCQ) "+response.getAnswer() );
@@ -530,7 +530,7 @@ class MultipalAnswer extends Question {
 	 * @param marks marks of the question if the answer is correct 
 	 **/
 
-	double eval( Response response ){
+	double eval( Response response, Candidate candidate ){
 		try{	
 			if( response == null ){
 				System.out.println("1. Error in response (MSQ) "+response.getAnswer() );
@@ -695,7 +695,7 @@ class RangeQuestion extends Question {
 		}
 	}
 
-	double eval(Response response){
+	double eval(Response response, Candidate candidate){
 
 		if( response == null ){
 			System.out.println("1. Error in response (NAT) "+response.getOptions()+" "+response.getAnswer());
@@ -728,7 +728,7 @@ class RangeQuestion extends Question {
 		}
 
 		try{
-			double resp =  Double.parseDouble( response.getOptions() ); 
+			double resp =  Double.parseDouble( sanitizeNATResponse( response.getOptions() ) ); 
 			this.AT++;
 
 			if( resp >= this.lower && resp <= this.upper){
@@ -740,8 +740,37 @@ class RangeQuestion extends Question {
 			}
 
 		}catch(Exception e){
+			System.err.println( "Exception in NAT( "+Id+" ) for "+candidate.rollNumber+": "+response.getOptions() );	
 			return this.invalidResponse;
 		}	
+	}
+
+	String sanitizeNATResponse(String response)
+	{
+		response = response.trim();
+
+		if(response.contains("http"))
+		{
+			response = response.replaceAll("http.*", "");
+		}
+		if(response.endsWith(".") && response.length() > 1)
+		{
+			response = response.substring(0, response.lastIndexOf("."));
+		}
+		if(response.endsWith("-") && response.length() > 1)
+		{
+			response = response.substring(0, response.lastIndexOf("-"));
+		}
+		if(".".equals(response))
+		{
+			response = "";
+		}
+		if("-".equals(response))
+		{
+			response = "";
+		}
+
+		return response;
 	}
 
 
@@ -1644,7 +1673,7 @@ class Paper{
 
 			 */
 
-			System.out.println("Registration_id, isQualified, Enrollment_id, JAM-Year,JAM-PaperCode, Paper-Name, Candidate-Name, Number-of-Candidate-appeared, RawMarks, NorMarks, JAMScore,AIR, category, PwD, Scribe, Nationality, Gender, dob (dd/mm/yy), Qualifying Degree, Qualifing-Discipline, Qualifing-Year, Phone, State(Permanent Address), Name of the Parent, Email, address_line_1, address_line_2, address_line_3, City, State, PIN, Gen-cutoff, OBC-cutoff, SCSTPwD_Cutoff, DigitalFingerPrint ");
+			System.out.println("Registration_id, isQualified, Enrollment_id, JAM-Year,JAM-PaperCode, Paper-Name, Candidate-Name, Number-of-Candidate-appeared, RawMarks, NorMarks, JAMScore,AIR, category, PwD, Scribe, Nationality, Gender, dob (dd/mm/yy), Name of the Parent, Email, Gen-cutoff, OBC-cutoff, SCSTPwD_Cutoff, DigitalFingerPrint ");
 
 			printScoreView();
 			return;
@@ -1776,7 +1805,7 @@ class Paper{
 
 			if( !multiSession )
 				NRMark = "Not Applicable";
-			System.out.print(c.paperCode+""+c.rollNumber+","+c.info.applicationId+","+c.info.name+","+c.info.category+","+c.info.isPd+","+c.paperCode+","+CodeMapping.paperCodeMap.get( c.paperCode.trim() )+",");
+			System.out.print(c.rollNumber+","+c.info.applicationId+","+c.info.name+","+c.info.category+","+c.info.isPd+","+c.paperCode+","+CodeMapping.paperCodeMap.get( c.paperCode.trim() )+",");
 
 			/*
 
@@ -1829,7 +1858,7 @@ class Paper{
 			if( !multiSession )
 				NRMark = "Not Applicable";
 
-			System.out.print(c.paperCode+""+c.rollNumber+", "+c.isQualified+", "+c.info.applicationId+", 2015, "+c.paperCode+", "+CodeMapping.paperCodeMap.get(c.paperCode.trim())+", ");
+			System.out.print(c.rollNumber+", "+c.isQualified+", "+c.info.applicationId+", 2016, "+c.paperCode+", "+CodeMapping.paperCodeMap.get(c.paperCode.trim())+", ");
 
             /*
 			if( c.sections.size() > 0){
@@ -1849,7 +1878,7 @@ class Paper{
             */
 
 			double rMark = Double.parseDouble( new DecimalFormat("#0.0#").format( c.actualMark ) );
-			System.out.println(c.info.name+", "+listOfCandidate.size()+", "+rMark+", "+NRMark+", "+c.JAMScore+", "+c.rank+", "+c.info.category+", "+c.info.isPd+", "+c.info.scribe+", "+c.info.nationality+", "+c.info.gender+", "+c.info.dob+", "+c.info.qualifiyngDegree+", "+c.info.qualifiyngDiscipline+", "+c.info.qualifyingYear+", "+c.info.phone+", "+c.info.perState+", "+c.info.parentName+", "+c.info.email+", \""+c.info.address1+"\", \""+c.info.address2+"\", \""+c.info.address3+"\", "+c.info.city+", "+c.info.state+", "+c.info.pincode+", "+genCutOff+", "+obcCutOff+", "+sTsCPwDCutOff+", "+c.digitalFP);
+			System.out.println(c.info.name+", "+listOfCandidate.size()+", "+rMark+", "+NRMark+", "+c.JAMScore+", "+c.rank+", "+c.info.category+", "+c.info.isPd+", "+c.info.scribe+", "+c.info.nationality+", "+c.info.gender+", "+c.info.dob+", "+c.info.parentName+", "+genCutOff+", "+obcCutOff+", "+sTsCPwDCutOff+", "+c.digitalFP);
 
 		}
 	}
@@ -1870,50 +1899,23 @@ class CandidateInfo{
 	String name;
 	String parentName;
 	String category;
-	String address1;
-	String address2;
-	String address3;
 	String city;
-	String perState;
-
-	String pincode;
 	String nationality;
 	String gender;
 	String dob;
-	String qualifiyngDegree;
-	String qualifiyngDiscipline;
-	String qualifyingYear;
-	String phone;
-	String email;
-	String state;
 
 	boolean scribe;	
 	boolean isPd;
 
-	CandidateInfo( String applicationId, String name, String parentName, String dob, String gender, String nationality, String category, String isPd, String scribe, String perState, String email, String phone, String pincode, String qualifiyngDegreeDiscipline, String address1, String address2, String address3, String city, String state, String qualifyingYear) {
+	CandidateInfo( String applicationId, String name, String parentName, String dob, String gender, String nationality, String category, String isPd, String scribe) {
 
 		this.applicationId = applicationId;                 
 		this.name = name;
 		this.parentName = parentName;
 		this.category = category;
-		this.address1 = address1;
-		this.address2 = address2;
-		this.address3 = address3;
-		this.city = city;
-		this.perState = perState;
-
-		this.pincode = pincode;
 		this.nationality = nationality;
 		this.gender = gender;
 		this.dob = dob;
-
-		this.qualifiyngDegree = qualifiyngDegree;
-		this.qualifiyngDiscipline = qualifiyngDegreeDiscipline;
-		this.qualifyingYear = qualifyingYear;
-
-		this.phone = phone;
-		this.email = email;
-		this.state = state;
 
 		if( scribe.trim().equals("t"))
 			this.scribe = true;	
@@ -1923,7 +1925,7 @@ class CandidateInfo{
 	}
 
 	String print(){
-		String out = applicationId+","+name+", "+parentName+", "+dob+", "+gender+", "+nationality+", "+scribe+", "+email+", "+phone+", "+pincode+", "+qualifiyngDegree+", "+address1+", "+address2+", "+address3+", "+city+", "+state;
+		String out = applicationId+","+name+", "+parentName+", "+dob+", "+gender+", "+nationality+", "+scribe;
 		return out.trim();
 	}
 }
@@ -1999,8 +2001,6 @@ class Candidate {
 		this.isQualified = false;
 		this.info = null;
 		this.digitalFP = null;
-		this.photoPath = null;
-		this.signaturePath = null;
 		this.qrCode = null;
 
 		marks = new ArrayList<Double>();
@@ -2072,16 +2072,16 @@ class Candidate {
 			if( info != null){
 
 				if( Print.actual ){
-					System.out.format("| %5d  | %-12s | %-35s | %-7s | %-8.2f | %-11f | %-15s | %-9d | %-16f | %-5s | %-5b | %-9b | %-9.2f | %-8.2f | %-6.2f |", rank, paperCode+""+rollNumber, info.name, sessionId, rawMark, actualMark, NrScore , JAMScore, actualJAMScore, info.category, info.isPd, isQualified, noP, noN, (noP/noN) );
+					System.out.format("| %5d  | %-12s | %-35s | %-7s | %-8.2f | %-11f | %-15s | %-9d | %-16f | %-5s | %-5b | %-9b | %-9.2f | %-8.2f | %-6.2f |", rank, rollNumber, info.name, sessionId, rawMark, actualMark, NrScore , JAMScore, actualJAMScore, info.category, info.isPd, isQualified, noP, noN, (noP/noN) );
 				}else{
-					System.out.format("| %5d  | %-12s | %-35s | %-7s | %-8.2f | %-15s | %-9d |  %-4s | %-5b | %-11b | %-9.2f | %-8.2f | %-6.2f |", rank, paperCode+""+rollNumber, info.name, sessionId, rawMark, NrScore, JAMScore, info.category, info.isPd, isQualified, noP, noN, ( noP/noN ) );
+					System.out.format("| %5d  | %-12s | %-35s | %-7s | %-8.2f | %-15s | %-9d |  %-4s | %-5b | %-11b | %-9.2f | %-8.2f | %-6.2f |", rank, rollNumber, info.name, sessionId, rawMark, NrScore, JAMScore, info.category, info.isPd, isQualified, noP, noN, ( noP/noN ) );
 				}
 			}else{
 
 				if( Print.actual ){
-					System.out.format("| %5d  | %-12s | %-7s | %-8.2f | %-11f | %-15.2f | %-9d | %-16f | ", rank, paperCode+""+rollNumber, sessionId, rawMark, actualMark, normalisedMark, JAMScore, actualJAMScore);
+					System.out.format("| %5d  | %-12s | %-7s | %-8.2f | %-11f | %-15.2f | %-9d | %-16f | ", rank, rollNumber, sessionId, rawMark, actualMark, normalisedMark, JAMScore, actualJAMScore);
 				}else{
-					System.out.format("| %5d  | %-12s | %-7s | %-8.2f | %-15.2f | %-9d | ", rank, paperCode+""+rollNumber, sessionId, rawMark, normalisedMark, JAMScore );
+					System.out.format("| %5d  | %-12s | %-7s | %-8.2f | %-15.2f | %-9d | ", rank, rollNumber, sessionId, rawMark, normalisedMark, JAMScore );
 				}
 
 			}
@@ -2113,7 +2113,7 @@ class Candidate {
 	}
 	void printInfo(){
 		String output =  rank+", "+rollNumber+" ,"+sessionId+", "+rawMark+", "+actualMark+", "+normalisedMark+", "+JAMScore+", "+actualJAMScore+", "+info.category+", "+info.isPd+", "+isQualified;
-		output += ", "+info.print()+", "+photoPath+", "+signaturePath+", "+qrCode+", "+digitalFP;
+		output += ", "+info.print()+", "+qrCode+", "+digitalFP;
 		System.out.println( output.trim() );
 	}
 }
@@ -2306,48 +2306,26 @@ public class ResultProcessing{
 			while( ( line = br.readLine() ) != null ){
 				String[] tk = line.split("\"?(,|$)(?=(([^\"]*\"){2})*[^\"]*$) *\"?");
 
-				String appId = tk[1].trim();
-				String reg1 = tk[2].trim();
-				String reg2 = tk[3].trim();
-				String session = tk[4].trim();
-				String center = tk[5].trim();
-				String name = tk[6].trim();
-				String pname = tk[7].trim();
-				String dob = tk[8].trim();
-				String gender = tk[9].trim();
-				String nationality = tk[10].trim();
-				String category = tk[11].trim();
-				String pwd = tk[12].trim();
-				String scribe = tk[13].trim();
-				String perState = tk[14].trim();
-				String pchoice1 = tk[15].trim();
-				String pchoice2 = tk[16].trim();
-				String email = tk[17].trim();
-				String mobile = tk[18].trim();
-				String cpincode = tk[19].trim();
-				String qdid = tk[20].trim();
-				String qcogn = tk[21].trim();
-				String qccity = tk[22].trim();
-				String qcogpin = tk[23].trim();
-				String infoS = tk[24].trim();
-				String status = tk[25].trim();
-				String codAdd1 =  tk[26].trim();
-				String codAdd2 = tk[27].trim();
-				String codAdd3 = tk[28].trim();
-				String codCity = tk[29].trim();
-				String codeState = tk[30].trim();
-				String qulYear = tk[31].trim();
-				String qcolState = tk[32].trim();
-				String isDegree = tk[33].trim(); 
+				String appId = tk[0].trim();
+				String reg1 = tk[1].trim();
+				String reg2 = tk[2].trim();
+				String name = tk[3].trim();
+				String pname = tk[4].trim();
+				String dob = tk[5].trim();
+				String gender = tk[6].trim();
+				String category = tk[7].trim();
+				String nationality = tk[8].trim();
+				String pwd = tk[9].trim();
+				String scribe = tk[10].trim();
 
-				CandidateInfo cinfo = new CandidateInfo( appId, name, pname,dob, gender, nationality, category, pwd, scribe, perState, email, mobile, cpincode, qdid, codAdd1, codAdd2, codAdd3, codCity, codeState, qulYear );
+				CandidateInfo cinfo = new CandidateInfo( appId, name, pname, dob, gender, nationality, category, pwd, scribe );
 
 				candidateInfoMap.put( reg1, cinfo );
 
 				if( reg2 != null && reg2.trim().length() > 0  )
 					candidateInfoMap.put( reg2, cinfo );
-
 			}
+
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -2375,37 +2353,36 @@ public class ResultProcessing{
 					continue;
 
 				String options = br.readLine();
+
 				String rtoken[] = line.split(",");
+				String otoken[] = options.split(",");
 
 				//System.out.println(  line );
 				//System.out.println( options );
 
-				String otoken[] = options.split(",");
 				String rollNumber = rtoken[1].trim();
 				String name = rtoken[2].trim();
 
-				String paperCode = rtoken[9].trim().substring(0,2);
+				String paperCode = rtoken[1].trim().substring(0,2);
 				Paper paper = paperMap.get( paperCode );
 
 				Candidate candidate = null;
 
 				if( paper != null ){
 
-					rollNumber = rollNumber.substring(2);	
-
 					Session session = paper.sessionMap.get( sessionId );
 
 					if( session != null ){
 
 						candidate = new Candidate( rollNumber, name, sessionId, paperCode );
-						CandidateInfo ci = candidateInfoMap.get( (paperCode+""+rollNumber).trim() );
+						CandidateInfo ci = candidateInfoMap.get( rollNumber );
 
 						if( ci != null ){
 
 							candidate.info = ci;
 						}
 
-						for(int i = 0, r = 11; i < session.listOfQuestions.size(); i++, r++){
+						for(int i = 0, r = 12; i < session.listOfQuestions.size(); i++, r++){
 
 							//System.out.println( rtoken[r] +", "+otoken[r] );
 
@@ -2413,7 +2390,7 @@ public class ResultProcessing{
 
 							Question question = session.listOfQuestions.get(i);
 
-							double mark = question.eval( response );
+							double mark = question.eval( response, candidate );
 
 							if( mark > 0.0){
 								candidate.noP += mark;

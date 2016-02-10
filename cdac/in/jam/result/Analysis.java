@@ -128,7 +128,7 @@ public class Analysis{
 					report.notAttempt++;
 				}else{
 					report.attempt++;
-					if( question.eval(response) > 0){
+					if( question.eval( response, can ) > 0){
 						report.correct++;
 					}else{
 						report.wrong++;
