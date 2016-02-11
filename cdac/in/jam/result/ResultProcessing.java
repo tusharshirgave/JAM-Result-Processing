@@ -362,7 +362,7 @@ class MultipalChocie extends Question{
 	double eval( Response response, Candidate candidate ){
 		try{	
 			if( response == null ){
-				System.out.println("1. Error in response (MCQ) "+response.getAnswer() );
+				System.out.println("1. Error in response (MCQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 				System.exit(0);
 			}
 
@@ -385,8 +385,7 @@ class MultipalChocie extends Question{
 				return unattempted;
 
 			}else if( options.indexOf( response.getAnswer() ) < 0 ){
-
-				System.out.println("2. Error in response (MCQ) "+response.getAnswer() );
+				System.out.println("2. Error in response (MCQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 				System.exit(0);
 
 			}else if( response.getAnswer().indexOf( this.answer.charAt(0) ) >= 0 ){
@@ -400,7 +399,7 @@ class MultipalChocie extends Question{
 			}
 
 		}catch(Exception e){
-			System.out.println("3. Error in response (MCQ) "+response.getAnswer() );
+			System.out.println("3. Error in response (MCQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 			System.exit(0);
 		}
 
@@ -499,7 +498,7 @@ class MultipalAnswer extends Question {
 			}
 
 			if( answer.trim().length() == 0 ){
-				System.out.println("Master key has error (MSQ) "+answer);
+				System.out.println("Master key has error (MSQ) "+answer+" Question: "+Id);
 				System.exit(0);
 			}
 
@@ -533,7 +532,7 @@ class MultipalAnswer extends Question {
 	double eval( Response response, Candidate candidate ){
 		try{	
 			if( response == null ){
-				System.out.println("1. Error in response (MSQ) "+response.getAnswer() );
+				System.out.println("1. Error in response (MSQ) Question ("+Id+") options: <"+response.getOptions()+">  answer: <"+response.getAnswer()+"> for :"+candidate.rollNumber);
 				System.exit(0);
 			}
 
@@ -556,8 +555,7 @@ class MultipalAnswer extends Question {
 				return unattempted;
 
 			}else if( options.indexOf( response.getAnswer() ) < 0 ){       
-
-				System.out.println("2. Error in response (MSQ) "+response.getAnswer() );
+				System.out.println("2. Error in response (MSQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 				System.exit(0);
 
 			}else if( this.answers.contains( response.getAnswer() ) ) {  
@@ -571,7 +569,7 @@ class MultipalAnswer extends Question {
 			}
 
 		}catch(Exception e){
-			System.out.println("3. Error in response (MSQ) "+response.getAnswer() );
+			System.out.println("3. Error in response (MSQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 			System.exit(0);
 		}
 
@@ -665,11 +663,12 @@ class RangeQuestion extends Question {
 
 				String []token = answer.split(":");
 				if( token.length != 2) {                                          
-					System.out.println("Error in master key creation "+answer);
+					System.out.println("Error in master key creation: "+answer+" Question: "+Id);
 					System.exit(0);
 				}
 				this.lower = Double.parseDouble( token[0] );
 				this.upper= Double.parseDouble( token[1] );	
+
 				if( this.lower > this.upper){
 					double temp = this.lower;
 					this.lower = this.upper;
@@ -698,7 +697,7 @@ class RangeQuestion extends Question {
 	double eval(Response response, Candidate candidate){
 
 		if( response == null ){
-			System.out.println("1. Error in response (NAT) "+response.getOptions()+" "+response.getAnswer());
+			System.out.println("1. Error in response (NAT) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 			System.exit(0);
 		}
 
@@ -717,30 +716,38 @@ class RangeQuestion extends Question {
                         return mark;
 
 		}else if ( response.getAnswer().equals("--") && !response.getOptions().equals("--")){  
-			System.out.println("2. Error in response (NAT) "+response.getOptions()+" "+response.getAnswer());
+
+			System.out.println("2. Error in response (NAT) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 			System.exit(0);
-		}else if ( !response.getAnswer().equals("--") && response.getOptions().equals("--") ){
-			System.out.println("3. Error in response (NAT) "+response.getOptions()+" "+response.getAnswer());
-			System.exit(0);
+
 		}else if( response.getAnswer().equals("--") ){
+
 			this.NA++;
 			return this.unattempted;
 		}
 
 		try{
+			Double.parseDouble( response.getOptions() );
+		}catch(Exception e){
+			System.err.println( "Exception in NAT( "+Id+" ) for "+candidate.rollNumber+": <"+response.getOptions()+"> Preprocessed Response: <"+sanitizeNATResponse( response.getOptions() )+">");
+		}
+
+		try{
 			double resp =  Double.parseDouble( sanitizeNATResponse( response.getOptions() ) ); 
-			this.AT++;
 
 			if( resp >= this.lower && resp <= this.upper){
 				this.R++;
+				this.AT++;
 				return this.mark;
 			}else{
+				this.AT++;
 				this.W++;
 				return this.negative;                 
 			}
 
 		}catch(Exception e){
-			System.err.println( "Exception in NAT( "+Id+" ) for "+candidate.rollNumber+": "+response.getOptions() );	
+
+			this.AT++;
 			return this.invalidResponse;
 		}	
 	}
