@@ -96,7 +96,7 @@ class QuestionReport{
 
 public class Analysis{	
 	
-	Map<String,QuestionReport> qReports = new TreeMap<String,QuestionReport>();
+	Map<Integer,QuestionReport> qReports = new TreeMap<Integer,QuestionReport>();
 
 	void PaperAnalyis(Session session){
 
@@ -116,8 +116,9 @@ public class Analysis{
 				
 				Response response =  can.responses.get(j);	
 				Question question = session.listOfQuestions.get(j);
-				QuestionReport report = qReports.get( session.id+"_"+question.Id );
-
+				Integer key = new Integer( question.Id.substring(1) );
+				//QuestionReport report = qReports.get( session.id+"_"+question.Id );
+				QuestionReport report = qReports.get( key );
 				
 				if( report == null){
 					report = new QuestionReport( question );
@@ -139,7 +140,8 @@ public class Analysis{
 					else
 						report.answers.add( response.answer );
 				}
-				qReports.put( session.id+"_"+question.Id, report );
+				//qReports.put( session.id+"_"+question.Id, report );
+				qReports.put( key, report );
 			}
 		}
 		print( session.id );
