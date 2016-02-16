@@ -1,0 +1,19 @@
+cdac/in/jam/result/ResultProcessing.java:283: error: MultipalChocie is not abstract and does not override abstract method getAnswers() in Question
+class MultipalChocie extends Question{
+^
+cdac/in/jam/result/ResultProcessing.java:474: error: MultipalAnswer is not abstract and does not override abstract method getAnswers() in Question
+class MultipalAnswer extends Question {
+^
+cdac/in/jam/result/ResultProcessing.java:607: error: cannot find symbol
+		System.out.print("[MSQ "+Id+", "+answer.trim()+", ");
+		                                 ^
+  symbol:   variable answer
+  location: class MultipalAnswer
+cdac/in/jam/result/ResultProcessing.java:625: error: cannot find symbol
+		return this.answer.trim();
+		           ^
+  symbol: variable answer
+cdac/in/jam/result/ResultProcessing.java:665: error: RangeQuestion is not abstract and does not override abstract method getAnswers() in Question
+class RangeQuestion extends Question {
+^
+5 errors

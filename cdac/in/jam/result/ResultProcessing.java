@@ -263,7 +263,7 @@ abstract class Question{
 	abstract double eval(Response response, Candidate candidate);
 	abstract void printLog( boolean flag );
 	abstract void print();
-	abstract String getAnswer();
+	abstract String getAnswers();
 	abstract String type();
 	abstract String getDL();	
 }
@@ -282,7 +282,8 @@ abstract class Question{
 
 class MultipalChocie extends Question{
 
-	String answer;
+	List<String> answers;
+	private boolean marksToAll;
 	static String options = "ABCD";
 
 
@@ -313,17 +314,28 @@ class MultipalChocie extends Question{
 		this.perNA = 0.0d;
 		this.perRAT = 0.0d;
 		this.DL = null;
+		this.marksToAll = false;
+		this.answers = new ArrayList<String>();
 
 		if( answer.equalsIgnoreCase("can") ){
 			this.isCancelled = true;
 		}else{
-			this.mark = Double.parseDouble( mark );
-			this.answer = answer.trim();
 
-			if( this.answer.trim().length() < 1 ){
-				System.out.println("Master key has error (MCQ) "+answer);
-				System.exit(0);
+			if( answer.equals("MTA") ){
+				marksToAll = true;
+			}else{	
+				String[] tokens =  answer.split(";");
+				if( tokens.length > 0){
+					for(String token: tokens){
+						answers.add( token.trim() );	
+					}	
+				}else{
+					System.err.println("Master key has error (MCQ) "+answer+" Question ID: "+Id);
+					System.exit(0);
+				}
 			}
+
+			this.mark = Double.parseDouble( mark );
 
 			if( Config.negative.equals("zero") ){
 				this.negative = 0.0d;
@@ -362,7 +374,7 @@ class MultipalChocie extends Question{
 	double eval( Response response, Candidate candidate ){
 		try{	
 			if( response == null ){
-				System.out.println("1. Error in response (MCQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
+				System.err.println("1. Error in response (MCQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 				System.exit(0);
 			}
 
@@ -374,7 +386,7 @@ class MultipalChocie extends Question{
 					return ( this.mark / Integer.parseInt( Config.cancelled ) );
 				}
 
-			}else if( "MTA".equals( this.answer ) ) {
+			}else if( this.marksToAll ) {
 
 				this.AT++;
 				this.R++;
@@ -385,10 +397,10 @@ class MultipalChocie extends Question{
 				return unattempted;
 
 			}else if( options.indexOf( response.getAnswer() ) < 0 ){
-				System.out.println("2. Error in response (MCQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
+				System.err.println("2. Error in response (MCQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 				System.exit(0);
 
-			}else if( response.getAnswer().indexOf( this.answer.charAt(0) ) >= 0 ){
+			}else if( this.answers.contains( response.getAnswer() ) ){
 				this.AT++;
 				this.R++;
 				return mark;
@@ -399,7 +411,7 @@ class MultipalChocie extends Question{
 			}
 
 		}catch(Exception e){
-			System.out.println("3. Error in response (MCQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
+			System.err.println("3. Error in response (MCQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 			System.exit(0);
 		}
 
@@ -409,7 +421,7 @@ class MultipalChocie extends Question{
 
 	void print(){
 
-		System.out.print("[MCQ"+Id+", "+answer+", ");
+		System.out.print("[MCQ"+Id+", "+getAnswers()+", ");
 		FP.printD(mark);
 		System.out.print(", ");
 		FP.printD(negative);
@@ -426,8 +438,23 @@ class MultipalChocie extends Question{
 		return DL;
 	}
 
-	String getAnswer(){
-		return answer;
+	String getAnswers(){
+
+		if( marksToAll )
+			return "MTA";
+
+		String tanswer = "";
+		boolean flag = true;
+
+		for(String ans: answers){
+			if( flag ){
+				flag = false;
+				tanswer = ans;
+			}else{
+				tanswer += ";"+ans;
+			}
+		}
+		return tanswer;
 	}
 
 	String type(){
@@ -448,9 +475,9 @@ class MultipalChocie extends Question{
 
 class MultipalAnswer extends Question {
 
-	List<String> answers;
-	static String options = "A;B;C;D;A;B;D;A;C;D;A;D;B;D";
-	String answer;
+	private List<String> answers;
+	private boolean marksToAll;
+	private static String options = "A;B;C;D;A;B;D;A;C;D;A;D;B;D";
 
 	/** 
 	 * 
@@ -479,27 +506,27 @@ class MultipalAnswer extends Question {
 		this.perNA = 0.0d;
 		this.perRAT = 0.0d;
 		this.DL = null;
+		this.marksToAll = false;
+
+		this.answers = new ArrayList<String>();
+		this.mark = Double.parseDouble( marks );
+		this.negative = 0.0d;
 
 		if( answer.equalsIgnoreCase("can") ){
-
 			this.isCancelled = true;
-
 		}else{
+			if( answer.equals("MTA") ){
+				this.marksToAll = true;
+			}else{	
+				String[] tokens = answer.split("#");
+				for(String token: tokens){
+					this.answers.add( token.trim() );
+				}
 
-			this.mark = Double.parseDouble( marks );
-			this.negative = 0.0d;
-
-			this.answer = answer.trim();
-			String[] token = this.answer.split("#");
-			answers = new ArrayList<String>();
- 
-			for(int i = 0; i < token.length; i++){	
-				this.answers.add( token[i].trim() );
-			}
-
-			if( answer.trim().length() == 0 ){
-				System.out.println("Master key has error (MSQ) "+answer+" Question: "+Id);
-				System.exit(0);
+				if(answers.size() <= 0){
+					System.err.println("Error in master key creation: "+answer+" Question: "+Id);
+					System.exit(0);
+				}
 			}
 
 			if( Config.unattempted.equals("zero") ){
@@ -532,7 +559,7 @@ class MultipalAnswer extends Question {
 	double eval( Response response, Candidate candidate ){
 		try{	
 			if( response == null ){
-				System.out.println("1. Error in response (MSQ) Question ("+Id+") options: <"+response.getOptions()+">  answer: <"+response.getAnswer()+"> for :"+candidate.rollNumber);
+				System.err.println("1. Error in response (MSQ) Question ("+Id+") options: <"+response.getOptions()+">  answer: <"+response.getAnswer()+"> for :"+candidate.rollNumber);
 				System.exit(0);
 			}
 
@@ -544,7 +571,7 @@ class MultipalAnswer extends Question {
 					return ( this.mark / Integer.parseInt( Config.cancelled ) );
 				}
 
-			}else if( "MTA".equals( this.answer ) ){
+			}else if( marksToAll ){
 
 				this.AT++;
 				this.R++;
@@ -555,7 +582,7 @@ class MultipalAnswer extends Question {
 				return unattempted;
 
 			}else if( options.indexOf( response.getAnswer() ) < 0 ){       
-				System.out.println("2. Error in response (MSQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
+				System.err.println("2. Error in response (MSQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 				System.exit(0);
 
 			}else if( this.answers.contains( response.getAnswer() ) ) {  
@@ -569,7 +596,7 @@ class MultipalAnswer extends Question {
 			}
 
 		}catch(Exception e){
-			System.out.println("3. Error in response (MSQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
+			System.err.println("3. Error in response (MSQ) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 			System.exit(0);
 		}
 
@@ -579,7 +606,7 @@ class MultipalAnswer extends Question {
 
 	void print(){
 
-		System.out.print("[MSQ "+Id+", "+answer.trim()+", ");
+		System.out.print("[MSQ "+this.Id+", "+this.getAnswers()+", ");
 		FP.printD(mark);
 		System.out.print(", ");
 		FP.printD(negative);
@@ -596,8 +623,22 @@ class MultipalAnswer extends Question {
 		return DL;
 	}
 
-	String getAnswer(){
-		return this.answer.trim();
+	String getAnswers(){
+
+		if( marksToAll )
+		return "MTA";
+
+		String tanswer = "";
+		boolean flag = true;
+		for(String ans: answers){
+			if( flag ){
+				flag = false;
+				tanswer = ans;	
+			}else{
+				tanswer += "#"+ans;
+			}	
+		}
+		return tanswer.trim();
 	}
 
 	String type(){
@@ -615,11 +656,32 @@ class MultipalAnswer extends Question {
  * @date 09/02/2015
  **/
 
-class RangeQuestion extends Question {
 
+class Rang{
+	
 	private double lower;
 	private double upper;
-	private String answer;
+
+	Rang(double lower, double upper){
+		this.lower = lower;
+		this.upper = upper;
+	}
+
+	boolean eval(double value){
+		if( value >= lower && value <= upper )
+			return true;
+		return false;
+	}
+
+	String getRang(){
+		return lower+":"+upper;
+	}
+}
+
+class RangeQuestion extends Question {
+
+	private List<Rang> answers;
+	private boolean marksToAll;
 
 	/** 
 	 * 
@@ -648,37 +710,44 @@ class RangeQuestion extends Question {
 		this.perRAT = 0.0d;
 		this.DL = null;
 
+		this.marksToAll = false;
+		this.answers = new ArrayList<Rang>();
+
+		this.mark = Double.parseDouble( mark );
+		this.negative = 0.0d;
+
 		if( answer.equalsIgnoreCase("can") ){
 
 			this.isCancelled = true;
 		}else{
 
 			if( "MTA".equals( answer.trim() ) ) {
-
-				this.answer = answer.trim();
-				this.lower = 0.0d;
-				this.upper = 0.0d;
-
+				this.marksToAll = true;
 			}else{	
+				String[] tokens = answer.split(";");
+				for(String token: tokens){
 
-				String []token = answer.split(":");
-				if( token.length != 2) {                                          
-					System.out.println("Error in master key creation: "+answer+" Question: "+Id);
+					String []rang = token.split(":");
+					if( rang.length != 2) {                                          
+						System.err.println("Error in master key creation: "+answer+" Question: "+Id);
+						System.exit(0);
+					}
+
+					double lower = Double.parseDouble( rang[0] );
+					double upper= Double.parseDouble( rang[1] );	
+
+					if( lower <= upper ){
+						answers.add( new Rang(lower, upper) );
+					}else{
+						answers.add( new Rang(upper, lower) );
+					}
+				}
+
+				if(answers.size() <= 0){
+					System.err.println("Error in master key creation: "+answer+" Question: "+Id);
 					System.exit(0);
 				}
-				this.lower = Double.parseDouble( token[0] );
-				this.upper= Double.parseDouble( token[1] );	
-
-				if( this.lower > this.upper){
-					double temp = this.lower;
-					this.lower = this.upper;
-					this.upper = temp;
-
-				}
 			}	
-
-			this.mark = Double.parseDouble( mark );
-			this.negative = 0.0d;
 
 			if( Config.unattempted.equals("zero") ){
 				this.unattempted = 0.0d;
@@ -697,7 +766,7 @@ class RangeQuestion extends Question {
 	double eval(Response response, Candidate candidate){
 
 		if( response == null ){
-			System.out.println("1. Error in response (NAT) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
+			System.err.println("1. Error in response (NAT) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 			System.exit(0);
 		}
 
@@ -709,7 +778,7 @@ class RangeQuestion extends Question {
 				return ( this.mark / Integer.parseInt( Config.cancelled ) );
 			}
 
-		}else if( "MTA".equals( this.answer ) ){
+		}else if( this.marksToAll ){
 
                         this.AT++;
                         this.R++;
@@ -717,11 +786,10 @@ class RangeQuestion extends Question {
 
 		}else if ( response.getAnswer().equals("--") && !response.getOptions().equals("--")){  
 
-			System.out.println("2. Error in response (NAT) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
+			System.err.println("2. Error in response (NAT) Question ("+Id+") "+response.getOptions()+" "+response.getAnswer()+" for :"+candidate.rollNumber);
 			System.exit(0);
 
 		}else if( response.getAnswer().equals("--") ){
-
 			this.NA++;
 			return this.unattempted;
 		}
@@ -735,15 +803,17 @@ class RangeQuestion extends Question {
 		try{
 			double resp =  Double.parseDouble( sanitizeNATResponse( response.getOptions() ) ); 
 
-			if( resp >= this.lower && resp <= this.upper){
-				this.R++;
-				this.AT++;
-				return this.mark;
-			}else{
-				this.AT++;
-				this.W++;
-				return this.negative;                 
+			for(Rang rang: this.answers){
+				if( rang.eval( resp ) ){
+					this.R++;
+					this.AT++;
+					return this.mark;
+				}
 			}
+
+			this.AT++;
+			this.W++;
+			return this.negative;                 
 
 		}catch(Exception e){
 
@@ -783,7 +853,7 @@ class RangeQuestion extends Question {
 
 	void print(){
 
-		System.out.print("[NAT"+Id+", ("+upper+":"+lower+"), ");
+		System.out.print("[NAT"+Id+", ("+getAnswers()+"), ");
 		FP.printD(mark);
 		System.out.print(", ");
 		FP.printD(negative);
@@ -796,8 +866,21 @@ class RangeQuestion extends Question {
 		System.out.println("R:"+this.R+" # TY:"+type()+" # NA:"+this.NA+" # W:"+W+" # %R:"+perR+" # %W:"+perW+" # %NA:"+perNA+" # %R/A:"+perRAT+" # DL:"+DL);
 	}
 
-	String getAnswer(){
-		return lower+":"+upper;
+	String getAnswers(){
+		if( marksToAll )
+			return "MTA";
+
+		String tanswer = "";
+		boolean flag = true;
+		for(Rang rang: answers){
+			if( flag ){
+				flag = false;
+				tanswer = rang.getRang();	
+			}else{
+				tanswer += ";"+rang.getRang();
+			}	
+		}
+		return tanswer.trim();
 	}
 
 	String getDL(){
@@ -1060,14 +1143,13 @@ class Paper{
 	static{
 
 		qulifyMark = new HashMap<String, QualifyingMarks>();
-
-		qulifyMark.put( "BL", new QualifyingMarks( 38, 20, 10, 5, 3 ) );
-		qulifyMark.put( "BT", new QualifyingMarks( 98, 49, 27, 14, 8 ) );
-		qulifyMark.put( "CY", new QualifyingMarks( 503, 254,133,75,41) );
-		qulifyMark.put( "GG", new QualifyingMarks( 143, 72, 37, 23, 11 ) );
-		qulifyMark.put( "MA", new QualifyingMarks( 450, 227, 122, 66, 35 ) );
-		qulifyMark.put( "MS", new QualifyingMarks( 131, 66, 36, 18, 11 ) );
-		qulifyMark.put( "PH", new QualifyingMarks( 533, 268, 141, 80, 44) );
+		qulifyMark.put( "BL", new QualifyingMarks( 20, 10, 5, 3, 2 ) );
+		qulifyMark.put( "BT", new QualifyingMarks( 89, 43, 24, 14, 8 ) );
+		qulifyMark.put( "CY", new QualifyingMarks( 441, 219,118, 68, 36) );
+		qulifyMark.put( "GG", new QualifyingMarks( 127, 65, 33, 19, 10 ) );
+		qulifyMark.put( "MA", new QualifyingMarks( 412, 207, 111, 63, 31 ) );
+		qulifyMark.put( "MS", new QualifyingMarks( 105, 53, 28, 15, 9 ) );
+		qulifyMark.put( "PH", new QualifyingMarks( 406, 227, 123, 71, 39) );
 	}
 
 

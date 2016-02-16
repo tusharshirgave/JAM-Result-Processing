@@ -62,7 +62,7 @@ class QuestionReport{
 			String option = null;
 
 			Integer count = 0 ;
-			String answer = String.format("%0$-17s", question.getAnswer() );
+			String answer = String.format("%0$-17s", question.getAnswers() );
 			DecimalFormat formatter = new DecimalFormat("00.00");
 
 			String corrper = formatter.format((float)(( (float) correct / attempt ) * 100));
